@@ -2708,26 +2708,31 @@ video {
                         "items": [],
                         "explanation": "Present Simple to rutyna i fakty, Present Continuous to teraz i tymczasowo, Past Simple to zamknięta przeszłość z konkretnym czasem. Formy nieregularne z tej lekcji przećwiczysz w osobnym module Czasowniki.",
                         "links": []
-                }
-        ],
-        "homework": [
+                },
                 {
                         "lessonLabel": "Lekcja 2",
                         "dateLabel": "20.08.2026",
-                        "label": "At, in, on: Prepositions of time - Test-English",
-                        "url": "https://test-english.com/grammar-points/a1/at-in-on-prepositions-time/",
-                        "type": "test"
+                        "topic": "Przyimki czasu in/on/at",
+                        "mistake": "",
+                        "correction": "",
+                        "items": [],
+                        "explanation": "In używamy dla miesięcy, pór roku i lat (in July, in summer, in 2026), on dla dni i dat (on Monday, on 2nd July), a at dla godzin i konkretnych momentów (at 8 o'clock, at night).",
+                        "links": [
+                                {
+                                        "label": "Przyimki czasu IN / ON / AT (i tak ogólnie przyimki też) | ROCK YOUR ENGLISH #101",
+                                        "url": "https://youtu.be/FL7glOBD6_s?si=GyOXufQXCctOWj2o",
+                                        "type": "youtube"
+                                },
+                                {
+                                        "label": "At, in, on: Prepositions of time - Test-English",
+                                        "url": "https://test-english.com/grammar-points/a1/at-in-on-prepositions-time/",
+                                        "type": "test"
+                                }
+                        ]
                 }
         ],
-        "media": [
-                {
-                        "lessonLabel": "Lekcja 2",
-                        "dateLabel": "20.08.2026",
-                        "label": "Przyimki czasu IN / ON / AT (i tak ogólnie przyimki też) | ROCK YOUR ENGLISH #101",
-                        "url": "https://youtu.be/FL7glOBD6_s?si=GyOXufQXCctOWj2o",
-                        "type": "youtube"
-                }
-        ],
+        "homework": [],
+        "media": [],
         "pronunciation": [],
         "distractors": [
                 {
@@ -4343,7 +4348,7 @@ video {
                             }).join('') + '</ul>';
                         }
                         return '<div class="hub-gram">' +
-                            '<p class="hub-gram-topic">' + escapeHtml(g.topic || '') + '</p>' +
+                            (g.topic ? '<p class="hub-gram-topic">' + escapeHtml(g.topic) + '</p>' : '') +
                             '<p class="hub-gram-lesson">' + escapeHtml(g.lessonLabel || '') +
                             (g.dateLabel ? ' &middot; ' + escapeHtml(g.dateLabel) : '') + '</p>' +
                             pair + items +
