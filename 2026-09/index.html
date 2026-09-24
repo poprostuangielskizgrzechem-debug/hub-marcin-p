@@ -5045,6 +5045,12 @@ video {
         var HUB = window.HUB_DATA || {};
         var LESSONS = HUB.lessons || [];
         var GRAMMAR = HUB.grammar || [];
+        // Liczba zagadnien, nie wpisow: kilka wpisow pod jednym tematem (pary
+        // blad/poprawka, lista zasad, linki) to jedno zagadnienie. Nowe zaczyna
+        // wpis z tematem albo pierwszy wpis lekcji.
+        var GRAMMAR_TOPICS = GRAMMAR.filter(function (g, i) {
+            return g.topic || i === 0 || GRAMMAR[i - 1].lessonLabel !== g.lessonLabel;
+        }).length;
         var HOMEWORK = HUB.homework || [];
         var MEDIA = HUB.media || [];
         var PRONUNCIATION = HUB.pronunciation || [];
@@ -5341,7 +5347,7 @@ video {
             var tiles = [
                 { key: 'flashcards',    icon: '📒', label: 'Fiszki',    sub: count(vocabCount, 'słówko', 'słówka', 'słówek') + ' do przeklikania', count: vocabCount },
                 { key: 'test',          icon: '📝', label: 'Test',      sub: 'Sprawdź się, możesz też wydrukować', count: vocabCount },
-                { key: 'grammar',       icon: '📚', label: 'Gramatyka', sub: count(GRAMMAR.length, 'zagadnienie', 'zagadnienia', 'zagadnień') + ' z lekcji', count: GRAMMAR.length + HOMEWORK.length },
+                { key: 'grammar',       icon: '📚', label: 'Gramatyka', sub: count(GRAMMAR_TOPICS, 'zagadnienie', 'zagadnienia', 'zagadnień') + ' z lekcji', count: GRAMMAR.length + HOMEWORK.length },
                 { key: 'media',         icon: '🎬', label: 'Artykuły/Wideo', sub: count(MEDIA.length, 'materiał', 'materiały', 'materiałów') + ' do obejrzenia/przeczytania', count: MEDIA.length },
                 { key: 'verbs',         icon: '🔄', label: 'Czasowniki nieregularne', sub: VERB_ROUND_SIZE + ' na rundę z ' + VERB_BANK.length + ' w banku', count: VERB_BANK.length },
                 { key: 'pronunciation', icon: '🔊', label: 'Wymowa',    sub: count(PRONUNCIATION.length, 'słówko', 'słówka', 'słówek') + ' do posłuchania', count: PRONUNCIATION.length },
@@ -5482,8 +5488,11 @@ video {
                                     return '<li>' + escapeHtml(it) + '</li>';
                                 }).join('') + '</ul>';
                             }
+                            // Temat wpisany tylko w pierwszym wpisie danego zagadnienia,
+                            // kolejne wpisy maja pusty topic i nie powtarzaja naglowka.
+                            var topic = g.topic ? '<p class="hub-gram-topic">' + escapeHtml(g.topic) + '</p>' : '';
                             return '<div class="hub-gram">' +
-                                pair + items +
+                                topic + pair + items +
                                 (g.explanation ? '<p class="hub-gram-expl">' + escapeAndLinkify(g.explanation) + '</p>' : '') +
                                 renderLinks(g.links) +
                                 '</div>';
