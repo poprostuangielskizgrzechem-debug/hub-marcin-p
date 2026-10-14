@@ -5609,10 +5609,10 @@ video {
                             article: m.label, section: 'Artykuły/Wideo', questions: qz.questions };
                         return '<details class="hub-ex-card hub-media-quiz"' + (key === 'm0' ? ' open' : '') + '>' +
                             '<summary class="hub-ex-head"><span class="hub-ex-title">' + escapeHtml(qz.title) + '</span></summary>' +
-                            writingQuestionsHtml(w, key) + '</details>';
+                            writingQuestionsHtml(w, key, true) + '</details>';
                     }).join('');
                 }).join('');
-            }).join('');
+            }).join('') + (quizNo ? wqSharePanelHtml('mall') : '');
             Object.keys(WQ_REG).forEach(function (k) { if (k.charAt(0) === 'm') wqApply(WQ_REG[k], k); });
             box.addEventListener('click', function (e) { wqHandleClick(e); });
         }
@@ -6832,6 +6832,48 @@ video {
                     encodeURIComponent((HUB.student || '') + ' - ' + (w.title || 'Teksty')) + '&body=' + encoded);
             }
             wqStatus(flatIdx, none ? 'Odpowiedz na przynajmniej jedno pytanie, żeby było co wysłać.' : '', false);
+            if (String(flatIdx).charAt(0) === 'm') mediaShareRefresh();
+        }
+        // Artykuly/Wideo: jeden panel wysylki na dole zakladki (klucz "mall"),
+        // wiadomosc zbiera wszystkie quizy z co najmniej jedna odpowiedzia.
+        function mediaQuizKeys() {
+            return Object.keys(WQ_REG).filter(function (k) { return /^m\d+$/.test(k); })
+                .sort(function (a, b) { return parseInt(a.slice(1), 10) - parseInt(b.slice(1), 10); });
+        }
+        function mediaAnswered() {
+            return mediaQuizKeys().reduce(function (n, k) { return n + wqResult(WQ_REG[k]).answered; }, 0);
+        }
+        function mediaShareText() {
+            var lines = [(HUB.student || 'Uczeń') + ' - ' + (HUB.monthLabel || '') + ', Artykuły/Wideo'];
+            var lastArticle = null;
+            mediaQuizKeys().forEach(function (k) {
+                var w = WQ_REG[k], r = wqResult(w);
+                if (!r.answered) return;
+                if (w.article !== lastArticle) { lines.push('', w.article); lastArticle = w.article; }
+                lines.push(w.title + ': ' + r.ok + '/' + r.total + ' pkt, próba nr ' + r.attempts);
+                if (r.answered < r.total) lines.push('Niedokończone: odpowiedzi na ' + r.answered + ' z ' + r.total + ' pytań');
+                if (r.wrong.length) lines.push('Błędy: ' + r.wrong.map(function (x) {
+                    return x.num + ' (zaznaczone ' + x.picked + ', poprawna ' + x.key + ')';
+                }).join(', '));
+            });
+            return lines.join('\n');
+        }
+        function mediaShareRefresh() {
+            var none = !mediaAnswered();
+            var encoded = encodeURIComponent(mediaShareText());
+            var num = (HUB.teacherWhatsApp || '').replace(/[^0-9]/g, '');
+            var wa = document.querySelector('[data-wq-wa="mall"]');
+            var mail = document.querySelector('[data-wq-mail="mall"]');
+            if (wa) {
+                wa.classList.toggle('is-disabled', none);
+                wa.setAttribute('href', none ? '#' : 'https://wa.me/' + num + '?text=' + encoded);
+            }
+            if (mail) {
+                mail.classList.toggle('is-disabled', none);
+                mail.setAttribute('href', none ? '#' : 'mailto:?subject=' +
+                    encodeURIComponent((HUB.student || '') + ' - Artykuły/Wideo') + '&body=' + encoded);
+            }
+            wqStatus('mall', none ? 'Odpowiedz na przynajmniej jedno pytanie, żeby było co wysłać.' : '', false);
         }
         function wqStatus(flatIdx, msg, warn) {
             var s = document.querySelector('[data-wq-status="' + flatIdx + '"]');
@@ -6872,7 +6914,7 @@ video {
                 navigator.clipboard.writeText(text).then(done).catch(legacy);
             } else legacy();
         }
-        function writingQuestionsHtml(w, flatIdx) {
+        function writingQuestionsHtml(w, flatIdx, noShare) {
             var qs = w.questions || [];
             if (!qs.length) return '';
             WQ_REG[flatIdx] = w;
@@ -6894,7 +6936,12 @@ video {
                 '<span class="hub-ex-score" style="white-space:normal" data-wq-score="' + flatIdx + '"></span>' +
                 '<button type="button" class="hub-ex-btn" data-wq-reset="' + flatIdx + '">&#8635; Resetuj</button>' +
                 '</div>' +
-                '<div class="hub-share">' +
+                (noShare ? '' : wqSharePanelHtml(flatIdx));
+        }
+        // Panel wysylki. W Artykulach/Wideo jest jeden, na samym dole zakladki
+        // (klucz "mall", wszystkie quizy w jednej wiadomosci), zamiast pod kazdym quizem.
+        function wqSharePanelHtml(flatIdx) {
+            return '<div class="hub-share">' +
                 '<div class="hub-share-actions">' +
                 (typeof navigator.share === 'function'
                     ? '<button type="button" class="hub-cta hub-cta-alt" data-wq-native="' + flatIdx + '">&#128228; Udost&#281;pnij</button>' : '') +
@@ -6928,17 +6975,19 @@ video {
             wqAct.blur();
             var aKey = wqAct.getAttribute('data-wq-reset') || wqAct.getAttribute('data-wq-copy') || wqAct.getAttribute('data-wq-native');
             var aItem = WQ_REG[aKey];
-            if (!aItem) return true;
+            if (!aItem && aKey !== 'mall') return true;
             if (wqAct.hasAttribute('data-wq-reset')) {
                 wqReset(aItem);
                 wqSave();
                 wqApply(aItem, aKey);
                 return true;
             }
-            if (!wqResult(aItem).answered) { wqStatus(aKey, 'Odpowiedz na przynajmniej jedno pytanie, żeby było co wysłać.', true); return true; }
-            if (wqAct.hasAttribute('data-wq-copy')) { wqCopy(aKey, wqShareText(aItem)); return true; }
+            var aAnswered = aKey === 'mall' ? mediaAnswered() : wqResult(aItem).answered;
+            var aText = aKey === 'mall' ? mediaShareText() : wqShareText(aItem);
+            if (!aAnswered) { wqStatus(aKey, 'Odpowiedz na przynajmniej jedno pytanie, żeby było co wysłać.', true); return true; }
+            if (wqAct.hasAttribute('data-wq-copy')) { wqCopy(aKey, aText); return true; }
             try {
-                navigator.share({ text: wqShareText(aItem) }).catch(function () {
+                navigator.share({ text: aText }).catch(function () {
                     wqStatus(aKey, 'Udostępnianie anulowane - spróbuj WhatsApp albo Kopiuj tekst.', false);
                 });
             } catch (err) {
